@@ -1,12 +1,15 @@
-FROM node:16 as build
-WORKDIR /app
+FROM node:10 AS ui-build
+WORKDIR /usr/src/app
+COPY my-app/ ./my-app/
+RUN cd my-app && npm install @angular/cli && npm install && npm run build
 
-RUN npm install -g @angular/cli
-
-COPY ./package.json .
+FROM node:10 AS server-build
+WORKDIR /root/
+COPY --from=ui-build /usr/src/app/my-app/dist ./my-app/dist
+COPY package*.json ./
 RUN npm install
-COPY . .
-#RUN ng build
-FROM nginx:latest
-FROM nginx as runtime
-COPY --from=build /app/dist/MyAngularApp /usr/share/nginx/html
+COPY server.js .
+
+EXPOSE 3080
+
+CMD ["node", "server.js"]
